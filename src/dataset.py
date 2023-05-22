@@ -10,7 +10,9 @@ from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 from PIL import Image
 import mindspore.dataset as de
 from mindspore.mindrecord import FileWriter
-import mindspore.dataset.vision.c_transforms as C
+import mindspore.dataset.vision as C
+
+from src.config import ConfigYOLOV3ResNet18
 
 
 def preprocess_fn(image, box, file, is_training):
@@ -306,16 +308,25 @@ def create_yolo_dataset(mindrecord_dir, batch_size=32, repeat_num=1, device_num=
 
     if is_training:
         hwc_to_chw = C.HWC2CHW()
+        # ds = ds.map(operations=compose_map_func, input_columns=["image", "annotation", "file"],
+        #             output_columns=["image", "bbox_1", "bbox_2", "bbox_3", "gt_box1", "gt_box2", "gt_box3"],
+        #             column_order=["image", "bbox_1", "bbox_2", "bbox_3", "gt_box1", "gt_box2", "gt_box3"],
+        #             num_parallel_workers=num_parallel_workers)
         ds = ds.map(operations=compose_map_func, input_columns=["image", "annotation", "file"],
-                    output_columns=["image", "bbox_1", "bbox_2", "bbox_3", "gt_box1", "gt_box2", "gt_box3"],
-                    column_order=["image", "bbox_1", "bbox_2", "bbox_3", "gt_box1", "gt_box2", "gt_box3"],
-                    num_parallel_workers=num_parallel_workers)
+                    output_columns=["image", "bbox_1", "bbox_2", "bbox_3", "gt_box1", "gt_box2", "gt_box3"])
+        ds = ds.project(["image", "bbox_1", "bbox_2", "bbox_3", "gt_box1", "gt_box2", "gt_box3"])
         ds = ds.map(operations=hwc_to_chw, input_columns=["image"], num_parallel_workers=num_parallel_workers)
         ds = ds.batch(batch_size, drop_remainder=True)
         ds = ds.repeat(repeat_num)
     else:
+        # hwc_to_chw = C.HWC2CHW()
+        # ds = ds.map(operations=compose_map_func, input_columns=["image", "annotation", "file"],
+        #             output_columns=["image", "image_shape", "annotation", "file"],
+        #             column_order=["image", "image_shape", "annotation", "file"],
+        #             num_parallel_workers=num_parallel_workers)
         ds = ds.map(operations=compose_map_func, input_columns=["image", "annotation", "file"],
                     output_columns=["image", "image_shape", "annotation", "file"],
-                    column_order=["image", "image_shape", "annotation", "file"],
                     num_parallel_workers=num_parallel_workers)
+        ds = ds.project(["image", "image_shape", "annotation", "file"])
+        # ds = ds.map(operations=hwc_to_chw, input_columns=["image"], num_parallel_workers=num_parallel_workers)
     return ds

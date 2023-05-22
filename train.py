@@ -110,7 +110,7 @@ cfg = edict({
 
     "lr": 0.001,
     "epoch_size": 60,
-    "batch_size": 32,
+    "batch_size": 8,
     "loss_scale" : 1024,
 
     "pre_trained": None,
